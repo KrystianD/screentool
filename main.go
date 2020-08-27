@@ -115,6 +115,10 @@ func saveScreenshotAndFinish() {
 }
 
 func updateCursor() {
+	if state == Hovering {
+		setWindowCursor(mainWindow, "crosshair")
+	}
+
 	if state == SelectingRegion {
 		diff := math.Min(math.Abs(float64(mousePos.X-startPoint.X)), math.Abs(float64(mousePos.Y-startPoint.Y)))
 
@@ -139,7 +143,6 @@ func updateCursor() {
 
 	if state == QuickAnnotating {
 		setWindowCursor(mainWindow, "default")
-		//setWindowCursor(mainWindow, "crosshair")
 	}
 }
 
@@ -214,6 +217,7 @@ func onMousePrimaryPressed(event *gdk.EventButton) {
 	if state == Hovering {
 		startPoint = mousePos
 		state = SelectingRegion
+		finalRect = NewRectangleFromXYWH(0, 0, 0, 0)
 	}
 
 	if state == QuickAnnotating {
@@ -256,9 +260,6 @@ func onMouseMove(event *gdk.EventMotion) {
 }
 
 func onMousePrimaryReleased(event *gdk.EventButton) {
-	var err error
-	_ = err
-
 	if state == SelectingRegion {
 		var controlPressed = (event.State() & uint(gdk.CONTROL_MASK)) > 0
 		var shiftPressed = (event.State() & uint(gdk.SHIFT_MASK)) > 0
@@ -285,10 +286,27 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 	mainWindow.QueueDraw()
 }
 
+func onMouseSecondaryReleased(event *gdk.EventButton) {
+	if state == QuickAnnotating {
+		if annotations.Has() {
+			annotations.HandleMouseSecondaryReleased()
+		} else {
+			state = Hovering
+		}
+	}
+
+	updateCursor()
+	mainWindow.QueueDraw()
+}
+
 func onKeyReleased(event *gdk.EventKey) {
 	if state == QuickAnnotating {
 		if event.KeyVal() == gdk.KEY_Shift_L {
 			saveScreenshotAndFinish()
+		}
+
+		if event.KeyVal() == gdk.KEY_space {
+			annotations.CycleTool()
 		}
 	}
 
@@ -342,6 +360,9 @@ func main() {
 		if mouseEvent.Button() == gdk.BUTTON_PRIMARY {
 			onMousePrimaryReleased(mouseEvent)
 		}
+		if mouseEvent.Button() == gdk.BUTTON_SECONDARY {
+			onMouseSecondaryReleased(mouseEvent)
+		}
 		return true
 	})
 
@@ -352,7 +373,7 @@ func main() {
 
 	mainWindow.SetEvents(int(gdk.POINTER_MOTION_MASK | gdk.KEY_RELEASE_MASK | gdk.BUTTON_PRESS_MASK))
 
-	// Allow window to be transparent
+	// Allow main window to be transparent
 	visual, err := mainWindow.GetScreen().GetRGBAVisual()
 	if err != nil || visual == nil {
 		log.Fatal("Alpha not supported")
