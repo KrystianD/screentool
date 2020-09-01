@@ -288,7 +288,7 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 	mainWindow.QueueDraw()
 }
 
-func onMouseSecondaryReleased(event *gdk.EventButton) {
+func onMouseSecondaryReleased() {
 	if state == QuickAnnotating {
 		if annotations.Has() {
 			annotations.HandleMouseSecondaryReleased()
@@ -366,7 +366,7 @@ func main() {
 			onMousePrimaryReleased(mouseEvent)
 		}
 		if mouseEvent.Button() == gdk.BUTTON_SECONDARY {
-			onMouseSecondaryReleased(mouseEvent)
+			onMouseSecondaryReleased()
 		}
 		return true
 	})
