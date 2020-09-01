@@ -63,7 +63,7 @@ func getCurrentToplevelWindows() []DesktopWindow {
 
 		winDesktop, _ := ewmh.WmDesktopGet(X, win.Id)
 
-		if curDesktop != winDesktop {
+		if curDesktop != winDesktop && winDesktop != 0xFFFFFFFF {
 			continue
 		}
 
