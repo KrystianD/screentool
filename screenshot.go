@@ -9,12 +9,12 @@ import (
 func captureScreenshot(rect Rectangle) (*gdk.Pixbuf, error) {
 	var err error
 
-	scr, err := gdk.ScreenGetDefault()
+	screen, err := gdk.ScreenGetDefault()
 	if err != nil {
 		return nil, err
 	}
 
-	rootWindow, err := scr.GetRootWindow()
+	rootWindow, err := screen.GetRootWindow()
 	if err != nil {
 		return nil, err
 	}

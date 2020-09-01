@@ -10,9 +10,9 @@ var currentCursor = ""
 func setWindowCursor(win *gtk.Window, name string) {
 	if name != currentCursor {
 		currentCursor = name
-		d, _ := win.GetDisplay()
-		c, _ := gdk.CursorNewFromName(d, name)
-		dw, _ := win.GetWindow()
-		dw.SetCursor(c)
+		display, _ := win.GetDisplay()
+		cursor, _ := gdk.CursorNewFromName(display, name)
+		window, _ := win.GetWindow()
+		window.SetCursor(cursor)
 	}
 }
