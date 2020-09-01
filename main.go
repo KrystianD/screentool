@@ -150,11 +150,13 @@ func findWindowUnderCursor() {
 	l, t, r, b := desktopRect.GetLTRB()
 	var FullscreenEdgeDistance = 10
 
-	if mousePos.X <= l+FullscreenEdgeDistance || mousePos.Y <= t+FullscreenEdgeDistance ||
-		mousePos.X >= r-1-FullscreenEdgeDistance || mousePos.Y >= b-1-FullscreenEdgeDistance {
-		hoveredWindow = nil
-		hoveredWindowRect = desktopRect
-	} else {
+	mouseOnEdge := mousePos.X <= l+FullscreenEdgeDistance || mousePos.Y <= t+FullscreenEdgeDistance ||
+		mousePos.X >= r-1-FullscreenEdgeDistance || mousePos.Y >= b-1-FullscreenEdgeDistance
+
+	hoveredWindow = nil
+	hoveredWindowRect = desktopRect
+
+	if !mouseOnEdge {
 		for i := range toplevelWindows {
 			var desktopWindow = toplevelWindows[len(toplevelWindows)-1-i]
 			if desktopWindow.Geometry.Contains(mousePos) {
