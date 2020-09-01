@@ -293,6 +293,9 @@ func onMouseSecondaryReleased(event *gdk.EventButton) {
 		} else {
 			state = Hovering
 		}
+	} else if state == Hovering {
+		gtk.MainQuit()
+		return
 	}
 
 	updateCursor()
