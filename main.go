@@ -389,5 +389,9 @@ func main() {
 	mainWindow.Show()
 	mainWindow.Present()
 
+	findWindowUnderCursor()
+	updateCursor()
+	mainWindow.QueueDraw()
+
 	gtk.Main()
 }
