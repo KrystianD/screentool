@@ -3,6 +3,12 @@ screentool
 
 A tool to make screenshots in a blazingly fast way.
 
+# Compilation
+
+```bash
+go build
+```
+
 # Demo
 
 https://www.youtube.com/watch?v=1PFXvkRdBNw
