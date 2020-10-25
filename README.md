@@ -30,7 +30,7 @@ Use your favorite hotkey to start screentool
 
 ## Advanced usage
 
-Select screenshot range with one of above ways, press and hold Shift key and release left mouse button.
+Select screenshot range with one of above ways, press and hold `Shift` key and release `Left Mouse Button`.
 The tool will enter Annotation mode.
 
 In Annotation mode, current tool can be changed with `Space`.
@@ -41,6 +41,8 @@ Currently, there are two tools implemented:
 - Freehand drawing tool - drag mouse to create a freehand line
 
 Release `Shift` to save the screenshot to the clipboard.
+
+Use `Right Mouse Button` to undo last action (creating an annotation or selecting screenshot area).
 
 ## Saving screenshot
 
