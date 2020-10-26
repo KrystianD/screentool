@@ -1,7 +1,7 @@
 screentool
 =====
 
-A tool to make screenshots in a blazingly fast way.
+A tool to make screenshots in a blazingly fast way (with annotations support).
 
 # Compilation
 
@@ -46,8 +46,8 @@ Use `Right Mouse Button` to undo last action (creating an annotation or selectin
 
 ## Saving screenshot
 
-screentool will save each captured screenshot in `$HOME/screenshots` directory if such directory is present
-in the filesystem.
+In addition to saving the screenshot to the clipboard, screentool will also save each captured 
+screenshot in `$HOME/screenshots` directory if such directory is present in the filesystem.
 
 ### Known limitations
 
