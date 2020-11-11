@@ -5,6 +5,20 @@ A tool to make screenshots in a blazingly fast way (with annotations support).
 
 # Compilation
 
+1. Install required libraries
+
+```bash
+apt-get install libgtk-3-dev
+```
+
+2. Install Go dependencies (you may need to adjust your GOPATH)
+
+```bash
+go get -d ./...
+```
+
+3. Build the tool
+
 ```bash
 go build
 ```
