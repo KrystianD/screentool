@@ -1,6 +1,10 @@
 package utils
 
-import "github.com/gotk3/gotk3/cairo"
+import (
+	"fmt"
+
+	"github.com/gotk3/gotk3/cairo"
+)
 
 type Rectangle struct {
 	l, r int
@@ -47,6 +51,13 @@ func (rect Rectangle) Size() Point {
 	}
 }
 
+func (rect *Rectangle) MoveLTRB(leftOffset int, topOffset int, rightOffset int, bottomOffset int) {
+	rect.l += leftOffset
+	rect.t += topOffset
+	rect.r += rightOffset
+	rect.b += bottomOffset
+}
+
 func (rect Rectangle) GetLTRB() (int, int, int, int) {
 	return rect.l, rect.t, rect.r, rect.b
 }
@@ -63,4 +74,8 @@ func (rect Rectangle) Contains(point Point) bool {
 func (rect Rectangle) SetToCairo(ctx *cairo.Context) {
 	x, y, w, h := rect.GetXYWH()
 	ctx.Rectangle(float64(x), float64(y), float64(w), float64(h))
+}
+
+func (rect Rectangle) Format() string {
+	return fmt.Sprintf("%d,%d(%dx%d)", rect.X(), rect.Y(), rect.Width(), rect.Height())
 }
