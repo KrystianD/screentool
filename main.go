@@ -272,7 +272,7 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 				hoveredWindow.RaiseToFront()
 			}
 
-			_, _ = glib.TimeoutAdd(10, func() {
+			_, _ = glib.TimeoutAdd(200, func() {
 				captureScreen(hoveredWindowRect, controlPressed, shiftPressed)
 			})
 		} else {
