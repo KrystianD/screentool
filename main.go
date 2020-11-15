@@ -389,6 +389,7 @@ func main() {
 	mainWindow.Show()
 	mainWindow.Present()
 
+	mousePos = getMousePosition()
 	findWindowUnderCursor()
 	updateCursor()
 	mainWindow.QueueDraw()

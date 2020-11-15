@@ -95,11 +95,7 @@ func getRootWindowRect() Rectangle {
 func getMousePosition() Point {
 	var err error
 
-	screen, err := gdk.ScreenGetDefault()
-	if err != nil {
-		log.Fatal(err)
-	}
-	device, err := screen.GetDisplay()
+	device, err := gdk.DisplayGetDefault()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -113,14 +109,13 @@ func getMousePosition() Point {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_ = pointer
 
 	var x, y int
-	var ss *gdk.Screen
-	err = pointer.GetPosition(&ss, &x, &y)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	var s *gdk.Screen
+	err = pointer.GetPosition(&s, &x, &y)
+	if err != nil {
+		log.Fatal(err)
+	}
 	pointer.Unref()
 
 	return Point{X: x, Y: y}
