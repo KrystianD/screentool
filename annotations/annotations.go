@@ -112,16 +112,15 @@ func drawArrow(startPoint, endPoint Point) {
 	const ArrowSize = 20
 	const ArrowAngle = 25
 
-	var len = startPoint.DistanceTo(endPoint)
-	println(len)
+	var distance = startPoint.DistanceTo(endPoint)
 
-	var arrowLen = math.Min(len, ArrowSize)
-
-	startPoint.CairoMoveTo(context)
-	endPoint.CairoLineTo(context)
-	context.Stroke()
+	var arrowLen = math.Min(distance, ArrowSize)
 
 	var normalized = NewPointFFromPoint(startPoint.TranslatedBy(endPoint.Negated())).Normalized()
+
+	startPoint.CairoMoveTo(context)
+	startPoint.TranslatedBy(normalized.MultipliedBy(distance - ArrowSize/2).Negated().ToPoint()).CairoLineTo(context)
+	context.Stroke()
 
 	var a1 = normalized.RotatedDegree(ArrowAngle).MultipliedBy(arrowLen)
 	var a2 = normalized.RotatedDegree(-ArrowAngle).MultipliedBy(arrowLen)
