@@ -58,6 +58,20 @@ func XPropGetPropertyLRTB(xu *xgbutil.XUtil, win xproto.Window, atomName string)
 	return true, left, right, top, bottom
 }
 
+func getScaleFactor() int {
+	device, err := gdk.DisplayGetDefault()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	m, err := device.GetPrimaryMonitor()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return m.GetScaleFactor()
+}
+
 func getCurrentToplevelWindows() []DesktopWindow {
 	var windows []DesktopWindow
 
@@ -73,17 +87,7 @@ func getCurrentToplevelWindows() []DesktopWindow {
 
 	curDesktop, _ := ewmh.CurrentDesktopGet(X)
 
-	device, err := gdk.DisplayGetDefault()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	m, err := device.GetPrimaryMonitor()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	scale := m.GetScaleFactor()
+	scale := getScaleFactor()
 
 	for _, clientId := range clientIds {
 		win := xwindow.New(X, clientId)
@@ -154,7 +158,9 @@ func getRootWindowRect() Rectangle {
 		log.Fatal(err)
 	}
 
-	return NewRectangleFromXYWH(0, 0, rootWindow.WindowGetWidth(), rootWindow.WindowGetHeight())
+	scale := getScaleFactor()
+
+	return NewRectangleFromXYWH(0, 0, rootWindow.WindowGetWidth()/scale, rootWindow.WindowGetHeight()/scale)
 }
 
 func getMousePosition() Point {
