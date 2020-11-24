@@ -71,6 +71,15 @@ func (rect Rectangle) Contains(point Point) bool {
 	return l <= point.X && point.X <= r && t <= point.Y && point.Y <= b
 }
 
+func (rect Rectangle) Scaled(scale float32) Rectangle {
+	return Rectangle{
+		r: int(float32(rect.r) * scale),
+		t: int(float32(rect.t) * scale),
+		l: int(float32(rect.l) * scale),
+		b: int(float32(rect.b) * scale),
+	}
+}
+
 func (rect Rectangle) SetToCairo(ctx *cairo.Context) {
 	x, y, w, h := rect.GetXYWH()
 	ctx.Rectangle(float64(x), float64(y), float64(w), float64(h))

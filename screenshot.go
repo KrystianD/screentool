@@ -25,5 +25,13 @@ func captureScreenshot(rect Rectangle) (*gdk.Pixbuf, error) {
 		return nil, err
 	}
 
+	// resize screenshot to requested dimensions in case of HiDPI
+	if w != pixbuf.GetWidth() || h != pixbuf.GetHeight() {
+		pixbuf, err = pixbuf.ScaleSimple(w, h, gdk.INTERP_BILINEAR)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return pixbuf, nil
 }

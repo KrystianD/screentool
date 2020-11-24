@@ -73,6 +73,18 @@ func getCurrentToplevelWindows() []DesktopWindow {
 
 	curDesktop, _ := ewmh.CurrentDesktopGet(X)
 
+	device, err := gdk.DisplayGetDefault()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	m, err := device.GetPrimaryMonitor()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	scale := m.GetScaleFactor()
+
 	for _, clientId := range clientIds {
 		win := xwindow.New(X, clientId)
 
@@ -121,7 +133,7 @@ func getCurrentToplevelWindows() []DesktopWindow {
 		}
 
 		windows = append(windows, DesktopWindow{
-			Geometry: geomRect,
+			Geometry: geomRect.Scaled(1.0 / float32(scale)),
 			window:   win,
 		})
 	}
