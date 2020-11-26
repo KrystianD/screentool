@@ -27,6 +27,7 @@ const (
 )
 
 var toplevelWindows []DesktopWindow
+var frozenScreen *gdk.Pixbuf
 var desktopRect Rectangle
 
 var mainWindow *gtk.Window
@@ -69,10 +70,14 @@ func captureScreen(rect Rectangle, controlPressed, shiftPressed bool) {
 	var err error
 
 	finalRect = rect
-	capturedPixbuf, err = captureScreenshot(rect)
 
-	if err != nil {
-		log.Fatal(err)
+	if frozenScreen == nil {
+		capturedPixbuf, err = captureScreenshot(finalRect)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		capturedPixbuf = CropPixbuf(frozenScreen, finalRect)
 	}
 
 	if controlPressed {
@@ -169,7 +174,12 @@ func findWindowUnderCursor() {
 }
 
 func onDraw(ctx *cairo.Context) {
-	ctx.SetOperator(cairo.OPERATOR_SOURCE)
+	ctx.SetOperator(cairo.OPERATOR_OVER)
+
+	if frozenScreen != nil {
+		gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, 0, 0)
+		ctx.Paint()
+	}
 
 	if state == Hovering {
 		ctx.SetSourceRGBA(0.0, 0.0, 0.0, 0)
@@ -190,9 +200,16 @@ func onDraw(ctx *cairo.Context) {
 		finalRect.SetToCairo(ctx)
 		ctx.Stroke()
 
-		ctx.SetSourceRGBA(0.0, 0.0, 0.0, 0.0)
-		finalRect.SetToCairo(ctx)
-		ctx.Fill()
+		if frozenScreen == nil {
+			ctx.SetOperator(cairo.OPERATOR_CLEAR)
+			finalRect.SetToCairo(ctx)
+			ctx.Fill()
+		} else {
+			finalRect.SetToCairo(ctx)
+			ctx.Clip()
+			gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, 0, 0)
+			ctx.Paint()
+		}
 	}
 
 	if state == QuickAnnotating {
@@ -267,14 +284,18 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 		var shiftPressed = (event.State() & uint(gdk.SHIFT_MASK)) > 0
 
 		if startPoint.ManhattanDistanceTo(mousePos) < 5 {
-			mainWindow.Hide()
-			if hoveredWindow != nil {
-				hoveredWindow.RaiseToFront()
-			}
+			if frozenScreen == nil {
+				mainWindow.Hide()
+				if hoveredWindow != nil {
+					hoveredWindow.RaiseToFront()
+				}
 
-			_, _ = glib.TimeoutAdd(200, func() {
+				_, _ = glib.TimeoutAdd(200, func() {
+					captureScreen(hoveredWindowRect, controlPressed, shiftPressed)
+				})
+			} else {
 				captureScreen(hoveredWindowRect, controlPressed, shiftPressed)
-			})
+			}
 		} else {
 			captureScreen(finalRect, controlPressed, shiftPressed)
 		}
@@ -327,6 +348,10 @@ func main() {
 
 	desktopRect = getRootWindowRect()
 	toplevelWindows = getCurrentToplevelWindows()
+
+	if len(os.Args) >= 2 && os.Args[1] == "--freeze" {
+		frozenScreen, err = captureScreenshot(desktopRect)
+	}
 
 	mainWindow, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
