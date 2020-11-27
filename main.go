@@ -37,7 +37,8 @@ var startPoint Point
 var mousePos Point
 var hoveredWindow *DesktopWindow
 var hoveredWindowRect Rectangle
-var finalRect Rectangle
+var selectedRect Rectangle
+var capturedRect Rectangle
 var capturedPixbuf *gdk.Pixbuf
 
 func NewPointFromEventButton(ev *gdk.EventButton) Point {
@@ -69,15 +70,15 @@ func saveScreenshot(pixbuf *gdk.Pixbuf) {
 func captureScreen(rect Rectangle, controlPressed, shiftPressed bool) {
 	var err error
 
-	finalRect = rect
+	capturedRect = rect
 
 	if frozenScreen == nil {
-		capturedPixbuf, err = captureScreenshot(finalRect)
+		capturedPixbuf, err = captureScreenshot(capturedRect)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		capturedPixbuf = CropPixbuf(frozenScreen, finalRect)
+		capturedPixbuf = CropPixbuf(frozenScreen, capturedRect)
 	}
 
 	if controlPressed {
@@ -87,7 +88,7 @@ func captureScreen(rect Rectangle, controlPressed, shiftPressed bool) {
 		mainWindow.Present()
 		mainWindow.QueueDraw()
 
-		annotations.InitAnnotations(finalRect.Size())
+		annotations.InitAnnotations(capturedRect.Size())
 
 		updateCursor()
 	} else {
@@ -99,7 +100,7 @@ func saveScreenshotAndFinish() {
 	var pixbuf *gdk.Pixbuf
 
 	if annotations.Has() {
-		var finalSurface = cairo.CreateImageSurface(cairo.FORMAT_ARGB32, finalRect.Width(), finalRect.Height())
+		var finalSurface = cairo.CreateImageSurface(cairo.FORMAT_ARGB32, capturedRect.Width(), capturedRect.Height())
 		var finalCtx = cairo.Create(finalSurface)
 
 		gtk.GdkCairoSetSourcePixBuf(finalCtx, capturedPixbuf, 0, 0)
@@ -107,7 +108,7 @@ func saveScreenshotAndFinish() {
 
 		annotations.Draw(finalCtx, 0, 0)
 
-		pixbuf, _ = gdk.PixbufGetFromSurface(finalSurface, 0, 0, finalRect.Width(), finalRect.Height())
+		pixbuf, _ = gdk.PixbufGetFromSurface(finalSurface, 0, 0, capturedRect.Width(), capturedRect.Height())
 	} else {
 		pixbuf = capturedPixbuf
 	}
@@ -197,15 +198,15 @@ func onDraw(ctx *cairo.Context) {
 
 		ctx.SetSourceRGB(0.0, 0.0, 1.0)
 		ctx.SetLineWidth(2)
-		finalRect.SetToCairo(ctx)
+		selectedRect.SetToCairo(ctx)
 		ctx.Stroke()
 
 		if frozenScreen == nil {
 			ctx.SetOperator(cairo.OPERATOR_CLEAR)
-			finalRect.SetToCairo(ctx)
+			selectedRect.SetToCairo(ctx)
 			ctx.Fill()
 		} else {
-			finalRect.SetToCairo(ctx)
+			selectedRect.SetToCairo(ctx)
 			ctx.Clip()
 			gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, 0, 0)
 			ctx.Paint()
@@ -218,15 +219,15 @@ func onDraw(ctx *cairo.Context) {
 
 		ctx.SetSourceRGB(0.0, 0.0, 0.5)
 		ctx.SetLineWidth(1)
-		finalRect.SetToCairo(ctx)
+		capturedRect.SetToCairo(ctx)
 		ctx.Stroke()
 
-		finalRect.SetToCairo(ctx)
+		capturedRect.SetToCairo(ctx)
 		ctx.Clip()
-		gtk.GdkCairoSetSourcePixBuf(ctx, capturedPixbuf, float64(finalRect.X()), float64(finalRect.Y()))
+		gtk.GdkCairoSetSourcePixBuf(ctx, capturedPixbuf, float64(capturedRect.X()), float64(capturedRect.Y()))
 		ctx.Paint()
 
-		annotations.Draw(ctx, finalRect.X(), finalRect.Y())
+		annotations.Draw(ctx, capturedRect.X(), capturedRect.Y())
 	}
 }
 
@@ -236,13 +237,13 @@ func onMousePrimaryPressed(event *gdk.EventButton) {
 	if state == Hovering {
 		startPoint = mousePos
 		state = SelectingRegion
-		finalRect = NewRectangleFromXYWH(0, 0, 0, 0)
+		selectedRect = NewRectangleFromXYWH(0, 0, 0, 0)
 	}
 
 	if state == QuickAnnotating {
 		mousePosRelative := Point{
-			X: mousePos.X - finalRect.X(),
-			Y: mousePos.Y - finalRect.Y(),
+			X: mousePos.X - capturedRect.X(),
+			Y: mousePos.Y - capturedRect.Y(),
 		}
 
 		annotations.HandleMousePressed(mousePosRelative)
@@ -260,13 +261,13 @@ func onMouseMove(event *gdk.EventMotion) {
 	}
 
 	if state == SelectingRegion {
-		finalRect = NewRectangleFromPoints(startPoint, mousePos)
+		selectedRect = NewRectangleFromPoints(startPoint, mousePos)
 	}
 
 	if state == QuickAnnotating {
 		mousePosRelative := Point{
-			X: mousePos.X - finalRect.X(),
-			Y: mousePos.Y - finalRect.Y(),
+			X: mousePos.X - capturedRect.X(),
+			Y: mousePos.Y - capturedRect.Y(),
 		}
 
 		if (event.State() & gdk.BUTTON1_MASK) > 0 {
@@ -297,7 +298,7 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 				captureScreen(hoveredWindowRect, controlPressed, shiftPressed)
 			}
 		} else {
-			captureScreen(finalRect, controlPressed, shiftPressed)
+			captureScreen(selectedRect, controlPressed, shiftPressed)
 		}
 	}
 
