@@ -44,6 +44,8 @@ Use your favorite hotkey to start screentool
 
 ## Advanced usage
 
+### Annotations
+
 Select screenshot range with one of above ways, press and hold `Shift` key and release `Left Mouse Button`.
 The tool will enter Annotation mode.
 
@@ -57,6 +59,11 @@ Currently, there are two tools implemented:
 Release `Shift` to save the screenshot to the clipboard.
 
 Use `Right Mouse Button` to undo last action (creating an annotation or selecting screenshot area).
+
+### Freezing screen
+
+Add `--freeze` parameter to take capture of the whole screen right after starting the tool,
+still allowing you to select region or window of interest.
 
 ## Saving screenshot
 
