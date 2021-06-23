@@ -108,7 +108,7 @@ func Draw(destContext *cairo.Context, x, y int) {
 
 	for _, object := range objects {
 		if freehand, ok := object.(Freehand); ok {
-			graphics.DrawPath(context, freehand.Points, LineColor, LineWidth)
+			graphics.DrawPath(context, freehand.Points, LineColor, LineWidth, false)
 		}
 		if arrow, ok := object.(Arrow); ok {
 			graphics.DrawArrow(context, arrow.Start, arrow.End, LineColor, LineWidth, ArrowSize, ArrowAngle)
@@ -117,7 +117,7 @@ func Draw(destContext *cairo.Context, x, y int) {
 
 	if isDrawing {
 		if tool == 0 {
-			graphics.DrawPath(context, newPathPoints, LineColor, LineWidth)
+			graphics.DrawPath(context, newPathPoints, LineColor, LineWidth, false)
 		} else if tool == 1 {
 			graphics.DrawArrow(context, startPoint, endPoint, LineColor, LineWidth, ArrowSize, ArrowAngle)
 		}
@@ -128,7 +128,7 @@ func Draw(destContext *cairo.Context, x, y int) {
 
 	destContext.ResetClip()
 	if tool == 0 {
-		graphics.DrawPath(destContext, PathIcon.Scaled(0.5).Moved(x, y).Moved(-20/2, -20/2).Points, LineColor, 1.5)
+		graphics.DrawPath(destContext, PathIcon.Scaled(0.5).Moved(x, y).Moved(-20/2, -20/2).Points, LineColor, 1.5, false)
 	} else if tool == 1 {
 		graphics.DrawArrow(destContext, NewPoint(x, y-20), NewPoint(x-20, y), LineColor, 1, ArrowSize/2, ArrowAngle)
 	}

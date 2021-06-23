@@ -6,7 +6,7 @@ import (
 	. "github.com/KrystianD/screentool/src/utils"
 )
 
-func DrawPath(context *cairo.Context, points []Point, color Color3F, width float64) {
+func DrawPath(context *cairo.Context, points []Point, color Color3F, width float64, fill bool) {
 	context.SetAntialias(cairo.ANTIALIAS_SUBPIXEL)
 	context.SetSourceRGB(color.Red, color.Green, color.Blue)
 	context.SetLineWidth(width)
@@ -18,5 +18,10 @@ func DrawPath(context *cairo.Context, points []Point, color Color3F, width float
 			context.LineTo(float64(point.X), float64(point.Y))
 		}
 	}
-	context.Stroke()
+
+	if fill {
+		context.Fill()
+	} else {
+		context.Stroke()
+	}
 }
