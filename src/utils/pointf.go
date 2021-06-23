@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/gotk3/gotk3/cairo"
@@ -79,4 +80,8 @@ func (point PointF) CairoMoveTo(ctx *cairo.Context) {
 
 func (point PointF) CairoLineTo(ctx *cairo.Context) {
 	ctx.LineTo(point.X, point.Y)
+}
+
+func (point PointF) Format() string {
+	return fmt.Sprintf("%.3f,%.3f", point.X, point.Y)
 }
