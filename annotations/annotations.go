@@ -5,7 +5,7 @@ import (
 
 	"github.com/gotk3/gotk3/cairo"
 
-	. "../utils"
+	. "github.com/KrystianD/screentool/main/utils"
 )
 
 type Freehand struct {

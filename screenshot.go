@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gotk3/gotk3/gdk"
 
-	. "./utils"
+	. "github.com/KrystianD/screentool/main/utils"
 )
 
 func captureScreenshot(rect Rectangle) (*gdk.Pixbuf, error) {

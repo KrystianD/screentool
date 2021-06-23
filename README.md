@@ -11,17 +11,14 @@ A tool to make screenshots in a blazingly fast way (with annotations support).
 apt-get install libgtk-3-dev
 ```
 
-2. Install Go dependencies (you may need to adjust your GOPATH)
+2. Build the tool
 
 ```bash
-go get -d ./...
-```
-
-3. Build the tool
-
-```bash
+cd src/
 go build
 ```
+
+Above command will also download and compile dependencies. It may take long time due to gotk3 build process.
 
 # Demo
 

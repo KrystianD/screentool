@@ -16,7 +16,7 @@ func saveToClipboardAndWait(pixbuf *gdk.Pixbuf, onOwnerChanged func()) {
 
 	var count = 0
 
-	_, _ = clip.Connect("owner-change", func(clip *gtk.Clipboard, event *gdk.Event) {
+	_ = clip.Connect("owner-change", func(clip *gtk.Clipboard, event *gdk.Event) {
 		count += 1
 		if count == 2 {
 			onOwnerChanged()

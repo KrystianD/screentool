@@ -7,7 +7,7 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 
-	"./utils"
+	"github.com/KrystianD/screentool/main/utils"
 )
 
 func CropPixbuf(pb *gdk.Pixbuf, rect utils.Rectangle) *gdk.Pixbuf {
