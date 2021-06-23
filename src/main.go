@@ -340,6 +340,9 @@ func onKeyReleased(event *gdk.EventKey) {
 	if event.KeyVal() == gdk.KEY_Escape {
 		gtk.MainQuit()
 	}
+
+	updateCursor()
+	mainWindow.QueueDraw()
 }
 
 func main() {

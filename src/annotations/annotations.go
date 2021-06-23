@@ -125,6 +125,13 @@ func Draw(destContext *cairo.Context, x, y int) {
 
 	destContext.SetSourceSurface(surface, float64(x), float64(y))
 	destContext.Paint()
+
+	destContext.ResetClip()
+	if tool == 0 {
+		graphics.DrawPath(destContext, PathIcon.Scaled(0.5).Moved(x, y).Moved(-20/2, -20/2).Points, LineColor, 1.5)
+	} else if tool == 1 {
+		graphics.DrawArrow(destContext, NewPoint(x, y-20), NewPoint(x-20, y), LineColor, 1, ArrowSize/2, ArrowAngle)
+	}
 }
 
 func savePathPoint(point Point) {
