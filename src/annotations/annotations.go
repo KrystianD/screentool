@@ -1,10 +1,9 @@
 package annotations
 
 import (
-	"math"
-
 	"github.com/gotk3/gotk3/cairo"
 
+	"github.com/KrystianD/screentool/src/graphics"
 	. "github.com/KrystianD/screentool/src/utils"
 )
 
@@ -97,45 +96,6 @@ func finalizeCurrentDrawing() {
 	}
 }
 
-func drawPath(points []Point) {
-	for i, point := range points {
-		if i == 0 {
-			context.MoveTo(float64(point.X), float64(point.Y))
-		} else {
-			context.LineTo(float64(point.X), float64(point.Y))
-		}
-	}
-	context.Stroke()
-}
-
-func drawArrow(startPoint, endPoint Point) {
-	const ArrowSize = 20
-	const ArrowAngle = 25
-
-	var distance = startPoint.DistanceTo(endPoint)
-
-	var arrowLen = math.Min(distance, ArrowSize)
-
-	var normalized = NewPointFFromPoint(startPoint.TranslatedBy(endPoint.Negated())).Normalized()
-
-	startPoint.CairoMoveTo(context)
-	var lineLen = distance - 2
-	if lineLen > 0 {
-		startPoint.TranslatedBy(normalized.MultipliedBy(lineLen).Negated().ToPoint()).CairoLineTo(context)
-	}
-	context.Stroke()
-
-	var a1 = normalized.RotatedDegree(ArrowAngle).MultipliedBy(arrowLen)
-	var a2 = normalized.RotatedDegree(-ArrowAngle).MultipliedBy(arrowLen)
-
-	context.NewPath()
-	endPoint.CairoMoveTo(context)
-	endPoint.TranslatedBy(a1.ToPoint()).CairoLineTo(context)
-	endPoint.TranslatedBy(a2.ToPoint()).CairoLineTo(context)
-	context.ClosePath()
-	context.Fill()
-}
-
 func Draw(destContext *cairo.Context, x, y int) {
 	context.SetSourceRGBA(0.0, 1.0, 0.0, 0)
 	context.SetOperator(cairo.OPERATOR_SOURCE)
@@ -147,18 +107,18 @@ func Draw(destContext *cairo.Context, x, y int) {
 
 	for _, object := range objects {
 		if freehand, ok := object.(Freehand); ok {
-			drawPath(freehand.Points)
+			graphics.DrawPath(context, freehand.Points)
 		}
 		if arrow, ok := object.(Arrow); ok {
-			drawArrow(arrow.Start, arrow.End)
+			graphics.DrawArrow(context, arrow.Start, arrow.End)
 		}
 	}
 
 	if isDrawing {
 		if tool == 0 {
-			drawPath(newPathPoints)
+			graphics.DrawPath(context, newPathPoints)
 		} else if tool == 1 {
-			drawArrow(startPoint, endPoint)
+			graphics.DrawArrow(context, startPoint, endPoint)
 		}
 	}
 
