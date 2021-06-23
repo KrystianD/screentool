@@ -1,4 +1,4 @@
-module github.com/KrystianD/screentool/main
+module github.com/KrystianD/screentool/src
 
 go 1.16
 

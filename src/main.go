@@ -14,8 +14,8 @@ import (
 
 	"github.com/lestrrat-go/strftime"
 
-	"github.com/KrystianD/screentool/main/annotations"
-	. "github.com/KrystianD/screentool/main/utils"
+	"github.com/KrystianD/screentool/src/annotations"
+	. "github.com/KrystianD/screentool/src/utils"
 )
 
 type State int
