@@ -97,28 +97,29 @@ func finalizeCurrentDrawing() {
 }
 
 func Draw(destContext *cairo.Context, x, y int) {
-	context.SetSourceRGBA(0.0, 1.0, 0.0, 0)
+	var LineColor = NewColor3F(1., 0., 0.)
+	const LineWidth = 2.
+	const ArrowSize = 20
+	const ArrowAngle = 25
+
+	context.SetSourceRGBA(0.0, 0.0, 0.0, 0.0)
 	context.SetOperator(cairo.OPERATOR_SOURCE)
 	context.Paint()
 
-	context.SetAntialias(cairo.ANTIALIAS_SUBPIXEL)
-	context.SetSourceRGB(1.0, 0.0, 0.0)
-	context.SetLineWidth(2)
-
 	for _, object := range objects {
 		if freehand, ok := object.(Freehand); ok {
-			graphics.DrawPath(context, freehand.Points)
+			graphics.DrawPath(context, freehand.Points, LineColor, LineWidth)
 		}
 		if arrow, ok := object.(Arrow); ok {
-			graphics.DrawArrow(context, arrow.Start, arrow.End)
+			graphics.DrawArrow(context, arrow.Start, arrow.End, LineColor, LineWidth, ArrowSize, ArrowAngle)
 		}
 	}
 
 	if isDrawing {
 		if tool == 0 {
-			graphics.DrawPath(context, newPathPoints)
+			graphics.DrawPath(context, newPathPoints, LineColor, LineWidth)
 		} else if tool == 1 {
-			graphics.DrawArrow(context, startPoint, endPoint)
+			graphics.DrawArrow(context, startPoint, endPoint, LineColor, LineWidth, ArrowSize, ArrowAngle)
 		}
 	}
 

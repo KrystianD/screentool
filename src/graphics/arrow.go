@@ -8,13 +8,14 @@ import (
 	. "github.com/KrystianD/screentool/src/utils"
 )
 
-func DrawArrow(context *cairo.Context, startPoint, endPoint Point) {
-	const ArrowSize = 20
-	const ArrowAngle = 25
+func DrawArrow(context *cairo.Context, startPoint, endPoint Point, color Color3F, width, arrowSize, arrowAngleDeg float64) {
+	context.SetAntialias(cairo.ANTIALIAS_SUBPIXEL)
+	context.SetSourceRGB(color.Red, color.Green, color.Blue)
+	context.SetLineWidth(width)
 
 	var distance = startPoint.DistanceTo(endPoint)
 
-	var arrowLen = math.Min(distance, ArrowSize)
+	var arrowLen = math.Min(distance, arrowSize)
 
 	var normalized = NewPointFFromPoint(startPoint.TranslatedBy(endPoint.Negated())).Normalized()
 
@@ -25,8 +26,8 @@ func DrawArrow(context *cairo.Context, startPoint, endPoint Point) {
 	}
 	context.Stroke()
 
-	var a1 = normalized.RotatedDegree(ArrowAngle).MultipliedBy(arrowLen)
-	var a2 = normalized.RotatedDegree(-ArrowAngle).MultipliedBy(arrowLen)
+	var a1 = normalized.RotatedDegree(arrowAngleDeg).MultipliedBy(arrowLen)
+	var a2 = normalized.RotatedDegree(-arrowAngleDeg).MultipliedBy(arrowLen)
 
 	context.NewPath()
 	endPoint.CairoMoveTo(context)
