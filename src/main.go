@@ -37,7 +37,7 @@ var startPoint Point
 var mousePos Point
 var hoveredWindow *DesktopWindow
 var hoveredWindowRect Rectangle
-var selectedRect Rectangle
+var selectedRegionRect Rectangle
 var capturedRect Rectangle
 var capturedPixbuf *gdk.Pixbuf
 
@@ -70,15 +70,15 @@ func saveScreenshot(pixbuf *gdk.Pixbuf) {
 func captureScreen(rect Rectangle, controlPressed, shiftPressed bool) {
 	var err error
 
-	capturedRect = rect
-
 	if frozenScreen == nil {
-		capturedPixbuf, err = captureScreenshot(capturedRect)
+		capturedPixbuf, err = captureScreenshot(rect)
+		capturedRect = rect
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		capturedPixbuf = CropPixbuf(frozenScreen, capturedRect)
+		capturedPixbuf = CropPixbuf(frozenScreen, rect)
+		capturedRect = rect
 	}
 
 	if controlPressed {
@@ -99,7 +99,9 @@ func captureScreen(rect Rectangle, controlPressed, shiftPressed bool) {
 func saveScreenshotAndFinish() {
 	var pixbuf *gdk.Pixbuf
 
-	if annotations.Has() {
+	if annotations.Empty() {
+		pixbuf = capturedPixbuf
+	} else {
 		var finalSurface = cairo.CreateImageSurface(cairo.FORMAT_ARGB32, capturedRect.Width(), capturedRect.Height())
 		var finalCtx = cairo.Create(finalSurface)
 
@@ -109,8 +111,6 @@ func saveScreenshotAndFinish() {
 		annotations.Draw(finalCtx, 0, 0)
 
 		pixbuf, _ = gdk.PixbufGetFromSurface(finalSurface, 0, 0, capturedRect.Width(), capturedRect.Height())
-	} else {
-		pixbuf = capturedPixbuf
 	}
 
 	mainWindow.Hide()
@@ -152,7 +152,7 @@ func updateCursor() {
 	}
 }
 
-func findWindowUnderCursor() {
+func updateWindowUnderCursor() {
 	l, t, r, b := desktopRect.GetLTRB()
 	var FullscreenEdgeDistance = 10
 
@@ -198,15 +198,15 @@ func onDraw(ctx *cairo.Context) {
 
 		ctx.SetSourceRGB(0.0, 0.0, 1.0)
 		ctx.SetLineWidth(2)
-		selectedRect.SetToCairo(ctx)
+		selectedRegionRect.SetToCairo(ctx)
 		ctx.Stroke()
 
 		if frozenScreen == nil {
 			ctx.SetOperator(cairo.OPERATOR_CLEAR)
-			selectedRect.SetToCairo(ctx)
+			selectedRegionRect.SetToCairo(ctx)
 			ctx.Fill()
 		} else {
-			selectedRect.SetToCairo(ctx)
+			selectedRegionRect.SetToCairo(ctx)
 			ctx.Clip()
 			gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, 0, 0)
 			ctx.Paint()
@@ -237,7 +237,7 @@ func onMousePrimaryPressed(event *gdk.EventButton) {
 	if state == Hovering {
 		startPoint = mousePos
 		state = SelectingRegion
-		selectedRect = NewRectangleFromXYWH(0, 0, 0, 0)
+		selectedRegionRect = NewRectangleFromXYWH(0, 0, 0, 0)
 	}
 
 	if state == QuickAnnotating {
@@ -257,11 +257,11 @@ func onMouseMove(event *gdk.EventMotion) {
 	mousePos = NewPointFromEventMotion(event)
 
 	if state == Hovering {
-		findWindowUnderCursor()
+		updateWindowUnderCursor()
 	}
 
 	if state == SelectingRegion {
-		selectedRect = NewRectangleFromPoints(startPoint, mousePos)
+		selectedRegionRect = NewRectangleFromPoints(startPoint, mousePos)
 	}
 
 	if state == QuickAnnotating {
@@ -298,7 +298,7 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 				captureScreen(hoveredWindowRect, controlPressed, shiftPressed)
 			}
 		} else {
-			captureScreen(selectedRect, controlPressed, shiftPressed)
+			captureScreen(selectedRegionRect, controlPressed, shiftPressed)
 		}
 	}
 
@@ -312,10 +312,10 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 
 func onMouseSecondaryReleased() {
 	if state == QuickAnnotating {
-		if annotations.Has() {
-			annotations.HandleMouseSecondaryReleased()
-		} else {
+		if annotations.Empty() {
 			state = Hovering
+		} else {
+			annotations.HandleMouseSecondaryReleased()
 		}
 	} else if state == Hovering {
 		gtk.MainQuit()
@@ -416,7 +416,7 @@ func main() {
 	mainWindow.Present()
 
 	mousePos = getMousePosition()
-	findWindowUnderCursor()
+	updateWindowUnderCursor()
 	updateCursor()
 	mainWindow.QueueDraw()
 

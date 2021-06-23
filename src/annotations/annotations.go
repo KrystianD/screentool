@@ -32,8 +32,8 @@ func InitAnnotations(size Point) {
 	context = cairo.Create(surface)
 }
 
-func Has() bool {
-	return len(objects) > 0
+func Empty() bool {
+	return len(objects) == 0
 }
 
 func HandleMousePressed(point Point) {
