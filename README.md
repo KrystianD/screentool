@@ -52,6 +52,7 @@ Currently, there are two tools implemented:
 
 - Arrow - drag mouse to create an arrow
 - Freehand drawing tool - drag mouse to create a freehand line
+- Eraser - drag mouse to create a filled rectangle
 
 Release `Shift` to save the screenshot to the clipboard.
 
