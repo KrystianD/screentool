@@ -32,6 +32,7 @@ var tool = 1
 func InitAnnotations(size Point) {
 	surface = cairo.CreateImageSurface(cairo.FORMAT_ARGB32, size.X, size.Y)
 	context = cairo.Create(surface)
+	tool = 1
 }
 
 func Empty() bool {
