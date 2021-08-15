@@ -14,11 +14,12 @@ apt-get install libgtk-3-dev
 2. Build the tool
 
 ```bash
-cd src/
-go build
+make
 ```
 
 Above command will also download and compile dependencies. It may take long time due to gotk3 build process.
+
+Run with `./screentool`.
 
 # Demo
 
@@ -48,10 +49,10 @@ The tool will enter Annotation mode.
 
 In Annotation mode, current tool can be changed with `Space`.
 
-Currently, there are two tools implemented:
+The following tools are implemented:
 
 - Arrow - drag mouse to create an arrow
-- Freehand drawing tool - drag mouse to create a freehand line
+- Freehand - drag mouse to create a freehand line
 - Eraser - drag mouse to create a filled rectangle
 
 Release `Shift` to save the screenshot to the clipboard.
