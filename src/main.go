@@ -57,14 +57,12 @@ func NewPointFromEventMotion(ev *gdk.EventMotion) Point {
 }
 
 func saveScreenshot(pixbuf *gdk.Pixbuf) {
-	go func() {
-		name, _ := strftime.Format("%Y-%m-%d_%H%M%S", time.Now())
-		screenshotsDir := os.ExpandEnv("$HOME/screenshots")
-		if FileExists(screenshotsDir) {
-			_ = pixbuf.SavePNG(fmt.Sprintf("%s/%s.png", screenshotsDir, name), 9)
-			fmt.Println("saved")
-		}
-	}()
+	name, _ := strftime.Format("%Y-%m-%d_%H%M%S", time.Now())
+	screenshotsDir := os.ExpandEnv("$HOME/screenshots")
+	if FileExists(screenshotsDir) {
+		_ = pixbuf.SavePNG(fmt.Sprintf("%s/%s.png", screenshotsDir, name), 9)
+		fmt.Println("saved")
+	}
 }
 
 func captureScreen(rect Rectangle, controlPressed, shiftPressed bool) {
@@ -114,8 +112,14 @@ func saveScreenshotAndFinish() {
 	}
 
 	mainWindow.Hide()
-	saveScreenshot(pixbuf)
+
+	var sem = make(chan int, 1)
+	go func() {
+		saveScreenshot(pixbuf)
+		sem <- 0
+	}()
 	saveToClipboardAndWait(pixbuf, func() {
+		<-sem
 		gtk.MainQuit()
 	})
 }
