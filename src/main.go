@@ -291,7 +291,7 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 					hoveredWindow.RaiseToFront()
 				}
 
-				_ = glib.TimeoutAdd(200, func() {
+				_, _ = glib.TimeoutAdd(200, func() {
 					captureScreen(hoveredWindowRect, controlPressed, shiftPressed)
 				})
 			} else {
@@ -368,15 +368,15 @@ func main() {
 	mainWindow.SetDecorated(false)
 	mainWindow.SetSkipTaskbarHint(true)
 
-	_ = mainWindow.Connect("destroy", func() {
+	_, _ = mainWindow.Connect("destroy", func() {
 		gtk.MainQuit()
 	})
 
-	_ = mainWindow.Connect("draw", func(window *gtk.Window, context *cairo.Context) {
+	_, _ = mainWindow.Connect("draw", func(window *gtk.Window, context *cairo.Context) {
 		onDraw(context)
 	})
 
-	_ = mainWindow.Connect("button-press-event", func(window *gtk.Window, event *gdk.Event) bool {
+	_, _ = mainWindow.Connect("button-press-event", func(window *gtk.Window, event *gdk.Event) bool {
 		mouseEvent := gdk.EventButtonNewFromEvent(event)
 		if mouseEvent.Button() == gdk.BUTTON_PRIMARY {
 			onMousePrimaryPressed(mouseEvent)
@@ -384,12 +384,12 @@ func main() {
 		return true
 	})
 
-	_ = mainWindow.Connect("motion-notify-event", func(window *gtk.Window, event *gdk.Event) bool {
+	_, _ = mainWindow.Connect("motion-notify-event", func(window *gtk.Window, event *gdk.Event) bool {
 		onMouseMove(gdk.EventMotionNewFromEvent(event))
 		return true
 	})
 
-	_ = mainWindow.Connect("button-release-event", func(window *gtk.Window, event *gdk.Event) bool {
+	_, _ = mainWindow.Connect("button-release-event", func(window *gtk.Window, event *gdk.Event) bool {
 		mouseEvent := gdk.EventButtonNewFromEvent(event)
 		if mouseEvent.Button() == gdk.BUTTON_PRIMARY {
 			onMousePrimaryReleased(mouseEvent)
@@ -400,7 +400,7 @@ func main() {
 		return true
 	})
 
-	_ = mainWindow.Connect("key-release-event", func(window *gtk.Window, event *gdk.Event) bool {
+	_, _ = mainWindow.Connect("key-release-event", func(window *gtk.Window, event *gdk.Event) bool {
 		onKeyReleased(gdk.EventKeyNewFromEvent(event))
 		return true
 	})
