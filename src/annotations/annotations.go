@@ -113,6 +113,7 @@ func finalizeCurrentDrawing() {
 
 func Draw(destContext *cairo.Context, x, y int) {
 	var LineColor = NewColor3F(1., 0., 0.)
+	var EraserColor = NewColor3F(0., 0., 0.)
 	const LineWidth = 2.
 	const ArrowSize = 20
 	const ArrowAngle = 25
@@ -129,7 +130,7 @@ func Draw(destContext *cairo.Context, x, y int) {
 			graphics.DrawArrow(context, arrow.Start, arrow.End, LineColor, LineWidth, ArrowSize, ArrowAngle)
 		}
 		if eraser, ok := object.(Eraser); ok {
-			graphics.DrawRectangle(context, NewRectangleFromPoints(eraser.Start, eraser.End), LineColor, LineWidth, true)
+			graphics.DrawRectangle(context, NewRectangleFromPoints(eraser.Start, eraser.End), EraserColor, LineWidth, true)
 		}
 	}
 
@@ -139,7 +140,7 @@ func Draw(destContext *cairo.Context, x, y int) {
 		} else if tool == 1 {
 			graphics.DrawArrow(context, startPoint, endPoint, LineColor, LineWidth, ArrowSize, ArrowAngle)
 		} else if tool == 2 {
-			graphics.DrawRectangle(context, NewRectangleFromPoints(startPoint, endPoint), LineColor, LineWidth, true)
+			graphics.DrawRectangle(context, NewRectangleFromPoints(startPoint, endPoint), EraserColor, LineWidth, true)
 		}
 	}
 
