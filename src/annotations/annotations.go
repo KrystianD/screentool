@@ -13,6 +13,9 @@ type Freehand struct {
 type Arrow struct {
 	Start, End Point
 }
+type Line struct {
+	Start, End Point
+}
 type Eraser struct {
 	Start, End Point
 }
@@ -51,6 +54,10 @@ func HandleMousePressed(point Point) {
 		isDrawing = true
 		startPoint = point
 		endPoint = point
+	} else if tool == 3 {
+		isDrawing = true
+		startPoint = point
+		endPoint = point
 	}
 }
 
@@ -64,6 +71,8 @@ func HandleMouseDrag(point Point) {
 	} else if tool == 1 {
 		endPoint = point
 	} else if tool == 2 {
+		endPoint = point
+	} else if tool == 3 {
 		endPoint = point
 	}
 }
@@ -83,7 +92,7 @@ func CycleTool() {
 
 	tool += 1
 
-	if tool > 2 {
+	if tool > 3 {
 		tool = 0
 	}
 }
@@ -104,6 +113,12 @@ func finalizeCurrentDrawing() {
 			End:   endPoint,
 		})
 	} else if tool == 2 {
+		tmpStartPoint, tmpEndPoint := graphics.SnapLineHV(startPoint, endPoint)
+		objects = append(objects, Line{
+			Start: tmpStartPoint,
+			End:   tmpEndPoint,
+		})
+	} else if tool == 3 {
 		objects = append(objects, Eraser{
 			Start: startPoint,
 			End:   endPoint,
@@ -129,6 +144,9 @@ func Draw(destContext *cairo.Context, x, y int) {
 		if arrow, ok := object.(Arrow); ok {
 			graphics.DrawArrow(context, arrow.Start, arrow.End, LineColor, LineWidth, ArrowSize, ArrowAngle)
 		}
+		if line, ok := object.(Line); ok {
+			graphics.DrawLine(context, line.Start, line.End, LineColor, LineWidth)
+		}
 		if eraser, ok := object.(Eraser); ok {
 			graphics.DrawRectangle(context, NewRectangleFromPoints(eraser.Start, eraser.End), EraserColor, LineWidth, true)
 		}
@@ -140,6 +158,9 @@ func Draw(destContext *cairo.Context, x, y int) {
 		} else if tool == 1 {
 			graphics.DrawArrow(context, startPoint, endPoint, LineColor, LineWidth, ArrowSize, ArrowAngle)
 		} else if tool == 2 {
+			tmpStartPoint, tmpEndPoint := graphics.SnapLineHV(startPoint, endPoint)
+			graphics.DrawLine(context, tmpStartPoint, tmpEndPoint, LineColor, LineWidth)
+		} else if tool == 3 {
 			graphics.DrawRectangle(context, NewRectangleFromPoints(startPoint, endPoint), EraserColor, LineWidth, true)
 		}
 	}
@@ -153,6 +174,8 @@ func Draw(destContext *cairo.Context, x, y int) {
 	} else if tool == 1 {
 		graphics.DrawArrow(destContext, NewPoint(x, y-20), NewPoint(x-20, y), LineColor, 1, ArrowSize/2, ArrowAngle)
 	} else if tool == 2 {
+		graphics.DrawLine(destContext, NewPoint(x-18, y-2), NewPoint(x-2, y-18), LineColor, 2)
+	} else if tool == 3 {
 		graphics.DrawRectangle(destContext, NewRectangleFromLTRB(x-10-7, y-10-5, x-10+7, y-10+5), LineColor, 1, true)
 	}
 }

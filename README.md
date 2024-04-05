@@ -53,6 +53,7 @@ The following tools are implemented:
 
 - Arrow - drag mouse to create an arrow
 - Freehand - drag mouse to create a freehand line
+- Line - draw mouse to create a horizontal or vertical line
 - Eraser - drag mouse to create a filled rectangle
 
 Release `Shift` to save the screenshot to the clipboard.
