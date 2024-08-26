@@ -327,7 +327,7 @@ func onMouseSecondaryReleased() {
 		} else {
 			annotations.HandleMouseSecondaryReleased()
 		}
-	} else if state == Hovering {
+	} else if state == SelectingRegion || state == Hovering {
 		gtk.MainQuit()
 		return
 	}
