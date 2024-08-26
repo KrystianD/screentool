@@ -30,11 +30,12 @@ var toplevelWindows []DesktopWindow
 var frozenScreen *gdk.Pixbuf
 var desktopRect Rectangle
 
-var mainWindow *gtk.Window
+var windows []*gtk.Window
 
 var state = Hovering
 var startPoint Point
 var mousePos Point
+var absoluteMousePos Point
 var hoveredWindow *DesktopWindow
 var hoveredWindowRect Rectangle
 var selectedRegionRect Rectangle
@@ -54,6 +55,15 @@ func NewPointFromEventMotion(ev *gdk.EventMotion) Point {
 		X: int(x),
 		Y: int(y),
 	}
+}
+
+func restoreCursor() {
+	setWindowCursor("default")
+}
+
+func quitApp() {
+	restoreCursor()
+	gtk.MainQuit()
 }
 
 func saveScreenshot(pixbuf *gdk.Pixbuf) {
@@ -88,9 +98,12 @@ func captureScreen(rect Rectangle, controlPressed, shiftPressed bool) {
 	if controlPressed {
 	} else if shiftPressed {
 		state = QuickAnnotating
-		mainWindow.Show()
-		mainWindow.Present()
-		mainWindow.QueueDraw()
+
+		for _, window := range windows {
+			window.Show()
+			window.Present()
+			window.QueueDraw()
+		}
 
 		annotations.InitAnnotations(capturedRect.Size())
 
@@ -117,7 +130,9 @@ func saveScreenshotAndFinish() {
 		pixbuf, _ = gdk.PixbufGetFromSurface(finalSurface, 0, 0, capturedRect.Width(), capturedRect.Height())
 	}
 
-	mainWindow.Hide()
+	for _, window := range windows {
+		window.Hide()
+	}
 
 	var sem = make(chan int, 1)
 	go func() {
@@ -125,40 +140,46 @@ func saveScreenshotAndFinish() {
 		sem <- 0
 	}()
 	saveToClipboardAndWait(pixbuf, func() {
+		restoreCursor()
 		<-sem
-		gtk.MainQuit()
+		quitApp()
 	})
+}
+
+func redrawAllWindows() {
+	for _, window := range windows {
+		window.QueueDraw()
+	}
 }
 
 func updateCursor() {
 	if state == Hovering {
-		setWindowCursor(mainWindow, "crosshair")
+		setWindowCursor("crosshair")
 	}
 
 	if state == SelectingRegion {
-		diff := math.Min(math.Abs(float64(mousePos.X-startPoint.X)), math.Abs(float64(mousePos.Y-startPoint.Y)))
-
+		diff := math.Min(math.Abs(float64(absoluteMousePos.X-startPoint.X)), math.Abs(float64(absoluteMousePos.Y-startPoint.Y)))
 		if diff < 20 {
-			setWindowCursor(mainWindow, "crosshair")
+			setWindowCursor("crosshair")
 		} else {
-			if mousePos.X < startPoint.X {
-				if mousePos.Y < startPoint.Y {
-					setWindowCursor(mainWindow, "ul_angle")
+			if absoluteMousePos.X < startPoint.X {
+				if absoluteMousePos.Y < startPoint.Y {
+					setWindowCursor("ul_angle")
 				} else {
-					setWindowCursor(mainWindow, "ll_angle")
+					setWindowCursor("ll_angle")
 				}
 			} else {
-				if mousePos.Y < startPoint.Y {
-					setWindowCursor(mainWindow, "ur_angle")
+				if absoluteMousePos.Y < startPoint.Y {
+					setWindowCursor("ur_angle")
 				} else {
-					setWindowCursor(mainWindow, "lr_angle")
+					setWindowCursor("lr_angle")
 				}
 			}
 		}
 	}
 
 	if state == QuickAnnotating {
-		setWindowCursor(mainWindow, "default")
+		setWindowCursor("default")
 	}
 }
 
@@ -166,8 +187,8 @@ func updateWindowUnderCursor() {
 	l, t, r, b := desktopRect.GetLTRB()
 	var FullscreenEdgeDistance = 10
 
-	mouseOnEdge := mousePos.X <= l+FullscreenEdgeDistance || mousePos.Y <= t+FullscreenEdgeDistance ||
-		mousePos.X >= r-1-FullscreenEdgeDistance || mousePos.Y >= b-1-FullscreenEdgeDistance
+	mouseOnEdge := absoluteMousePos.X <= l+FullscreenEdgeDistance || absoluteMousePos.Y <= t+FullscreenEdgeDistance ||
+		absoluteMousePos.X >= r-1-FullscreenEdgeDistance || absoluteMousePos.Y >= b-1-FullscreenEdgeDistance
 
 	hoveredWindow = nil
 	hoveredWindowRect = desktopRect
@@ -175,7 +196,7 @@ func updateWindowUnderCursor() {
 	if !mouseOnEdge {
 		for i := range toplevelWindows {
 			var desktopWindow = toplevelWindows[len(toplevelWindows)-1-i]
-			if desktopWindow.Geometry.Contains(mousePos) {
+			if desktopWindow.Geometry.Contains(absoluteMousePos) {
 				hoveredWindow = &desktopWindow
 				hoveredWindowRect = desktopWindow.Geometry
 				break
@@ -184,11 +205,15 @@ func updateWindowUnderCursor() {
 	}
 }
 
-func onDraw(ctx *cairo.Context) {
+func onDraw(monitor *gdk.Monitor, ctx *cairo.Context) {
 	ctx.SetOperator(cairo.OPERATOR_OVER)
 
+	monitorRect := NewRectangleFromGdkRectangle(monitor.GetGeometry())
+	monitorX := monitorRect.X()
+	monitorY := monitorRect.Y()
+
 	if frozenScreen != nil {
-		gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, 0, 0)
+		gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, float64(-monitorX), -float64(monitorY))
 		ctx.Paint()
 	}
 
@@ -197,8 +222,11 @@ func onDraw(ctx *cairo.Context) {
 		ctx.Paint()
 
 		ctx.SetSourceRGB(1.0, 1.0, 0.0)
-		ctx.SetLineWidth(5)
-		hoveredWindowRect.SetToCairo(ctx)
+		ctx.SetLineWidth(4)
+
+		hoveredWindowRectOnMonitor := hoveredWindowRect.TranslatedByXY(-monitorX, -monitorY).Shrinked(2)
+
+		hoveredWindowRectOnMonitor.SetToCairo(ctx)
 		ctx.Stroke()
 	}
 
@@ -206,19 +234,23 @@ func onDraw(ctx *cairo.Context) {
 		ctx.SetSourceRGBA(0.0, 0.0, 0.0, 0.25)
 		ctx.Paint()
 
+		ctx.Stroke()
+
+		selectedRegionRectOnMonitor := selectedRegionRect.TranslatedByXY(-monitorX, -monitorY)
+
 		ctx.SetSourceRGB(0.0, 0.0, 1.0)
 		ctx.SetLineWidth(2)
-		selectedRegionRect.SetToCairo(ctx)
+		selectedRegionRectOnMonitor.SetToCairo(ctx)
 		ctx.Stroke()
 
 		if frozenScreen == nil {
 			ctx.SetOperator(cairo.OPERATOR_CLEAR)
-			selectedRegionRect.SetToCairo(ctx)
+			selectedRegionRectOnMonitor.SetToCairo(ctx)
 			ctx.Fill()
 		} else {
-			selectedRegionRect.SetToCairo(ctx)
+			selectedRegionRectOnMonitor.SetToCairo(ctx)
 			ctx.Clip()
-			gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, 0, 0)
+			gtk.GdkCairoSetSourcePixBuf(ctx, frozenScreen, float64(-monitorX), float64(-monitorY))
 			ctx.Paint()
 		}
 	}
@@ -227,57 +259,61 @@ func onDraw(ctx *cairo.Context) {
 		ctx.SetSourceRGBA(0.0, 0.0, 0.0, 0.55)
 		ctx.Paint()
 
+		capturedRectOnMonitor := capturedRect.TranslatedByXY(-monitorX, -monitorY)
+
 		ctx.SetSourceRGB(0.0, 0.0, 0.5)
 		ctx.SetLineWidth(1)
-		capturedRect.SetToCairo(ctx)
+		capturedRectOnMonitor.SetToCairo(ctx)
 		ctx.Stroke()
 
-		capturedRect.SetToCairo(ctx)
+		capturedRectOnMonitor.SetToCairo(ctx)
 		ctx.Clip()
-		gtk.GdkCairoSetSourcePixBuf(ctx, capturedPixbuf, float64(capturedRect.X()), float64(capturedRect.Y()))
+		gtk.GdkCairoSetSourcePixBuf(ctx, capturedPixbuf, float64(capturedRect.X()-monitorX), float64(capturedRect.Y()-monitorY))
 		ctx.Paint()
 
-		annotations.Draw(ctx, capturedRect.X(), capturedRect.Y())
+		annotations.Draw(ctx, capturedRect.X()-monitorX, capturedRect.Y()-monitorY)
 	}
 }
 
-func onMousePrimaryPressed(event *gdk.EventButton) {
+func onMousePrimaryPressed(monitor *gdk.Monitor, event *gdk.EventButton) {
 	mousePos = NewPointFromEventButton(event)
+	absoluteMousePos = mousePos.TranslatedByXY(monitor.GetGeometry().GetX(), monitor.GetGeometry().GetY())
 
 	if state == Hovering {
-		startPoint = mousePos
+		startPoint = absoluteMousePos
 		state = SelectingRegion
 		selectedRegionRect = NewRectangleFromXYWH(0, 0, 0, 0)
 	}
 
 	if state == QuickAnnotating {
 		mousePosRelative := Point{
-			X: mousePos.X - capturedRect.X(),
-			Y: mousePos.Y - capturedRect.Y(),
+			X: absoluteMousePos.X - capturedRect.X(),
+			Y: absoluteMousePos.Y - capturedRect.Y(),
 		}
 
 		annotations.HandleMousePressed(mousePosRelative)
 	}
 
 	updateCursor()
-	mainWindow.QueueDraw()
+	redrawAllWindows()
 }
 
-func onMouseMove(event *gdk.EventMotion) {
+func onMouseMove(monitor *gdk.Monitor, event *gdk.EventMotion) {
 	mousePos = NewPointFromEventMotion(event)
+	absoluteMousePos = mousePos.TranslatedByXY(monitor.GetGeometry().GetX(), monitor.GetGeometry().GetY())
 
 	if state == Hovering {
 		updateWindowUnderCursor()
 	}
 
 	if state == SelectingRegion {
-		selectedRegionRect = NewRectangleFromPoints(startPoint, mousePos)
+		selectedRegionRect = NewRectangleFromPoints(startPoint, absoluteMousePos)
 	}
 
 	if state == QuickAnnotating {
 		mousePosRelative := Point{
-			X: mousePos.X - capturedRect.X(),
-			Y: mousePos.Y - capturedRect.Y(),
+			X: absoluteMousePos.X - capturedRect.X(),
+			Y: absoluteMousePos.Y - capturedRect.Y(),
 		}
 
 		if (event.State() & gdk.BUTTON1_MASK) > 0 {
@@ -286,17 +322,21 @@ func onMouseMove(event *gdk.EventMotion) {
 	}
 
 	updateCursor()
-	mainWindow.QueueDraw()
+	redrawAllWindows()
 }
 
 func onMousePrimaryReleased(event *gdk.EventButton) {
+	setWindowCursor("default")
+
 	if state == SelectingRegion {
 		var controlPressed = (event.State() & uint(gdk.CONTROL_MASK)) > 0
 		var shiftPressed = (event.State() & uint(gdk.SHIFT_MASK)) > 0
 
-		if startPoint.ManhattanDistanceTo(mousePos) < 5 {
+		if startPoint.ManhattanDistanceTo(absoluteMousePos) < 5 {
 			if frozenScreen == nil {
-				mainWindow.Hide()
+				for _, window := range windows {
+					window.Hide()
+				}
 				if hoveredWindow != nil {
 					hoveredWindow.RaiseToFront()
 				}
@@ -316,11 +356,12 @@ func onMousePrimaryReleased(event *gdk.EventButton) {
 		annotations.HandleMouseReleased()
 	}
 
-	updateCursor()
-	mainWindow.QueueDraw()
+	redrawAllWindows()
 }
 
 func onMouseSecondaryReleased() {
+	setWindowCursor("default")
+
 	if state == QuickAnnotating {
 		if annotations.Empty() {
 			state = Hovering
@@ -328,12 +369,11 @@ func onMouseSecondaryReleased() {
 			annotations.HandleMouseSecondaryReleased()
 		}
 	} else if state == SelectingRegion || state == Hovering {
-		gtk.MainQuit()
+		quitApp()
 		return
 	}
 
-	updateCursor()
-	mainWindow.QueueDraw()
+	redrawAllWindows()
 }
 
 func onKeyReleased(event *gdk.EventKey) {
@@ -348,11 +388,82 @@ func onKeyReleased(event *gdk.EventKey) {
 	}
 
 	if event.KeyVal() == gdk.KEY_Escape {
-		gtk.MainQuit()
+		quitApp()
+		return
 	}
 
 	updateCursor()
-	mainWindow.QueueDraw()
+	redrawAllWindows()
+}
+
+func createWindow(monitor *gdk.Monitor) {
+	var err error
+
+	position := monitor.GetGeometry()
+
+	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		log.Fatal("Unable to create window:", err)
+	}
+
+	window.Fullscreen()
+	window.SetKeepAbove(true)
+	window.SetAppPaintable(true)
+	window.SetDecorated(false)
+	window.SetSkipTaskbarHint(true)
+	window.Resize(position.GetWidth(), position.GetHeight())
+	window.Move(position.GetX(), position.GetY())
+
+	_ = window.Connect("destroy", func() {
+		quitApp()
+	})
+
+	_ = window.Connect("draw", func(eventWindow *gtk.Window, context *cairo.Context) {
+		onDraw(monitor, context)
+	})
+
+	_ = window.Connect("button-press-event", func(eventWindow *gtk.Window, event *gdk.Event) bool {
+		mouseEvent := gdk.EventButtonNewFromEvent(event)
+		if mouseEvent.Button() == gdk.BUTTON_PRIMARY {
+			onMousePrimaryPressed(monitor, mouseEvent)
+		}
+		return true
+	})
+
+	_ = window.Connect("motion-notify-event", func(eventWindow *gtk.Window, event *gdk.Event) bool {
+		onMouseMove(monitor, gdk.EventMotionNewFromEvent(event))
+		return true
+	})
+
+	_ = window.Connect("button-release-event", func(eventWindow *gtk.Window, event *gdk.Event) bool {
+		mouseEvent := gdk.EventButtonNewFromEvent(event)
+		if mouseEvent.Button() == gdk.BUTTON_PRIMARY {
+			onMousePrimaryReleased(mouseEvent)
+		}
+		if mouseEvent.Button() == gdk.BUTTON_SECONDARY {
+			onMouseSecondaryReleased()
+		}
+		return true
+	})
+
+	_ = window.Connect("key-release-event", func(eventWindow *gtk.Window, event *gdk.Event) bool {
+		onKeyReleased(gdk.EventKeyNewFromEvent(event))
+		return true
+	})
+
+	window.SetEvents(int(gdk.POINTER_MOTION_MASK | gdk.KEY_RELEASE_MASK | gdk.BUTTON_PRESS_MASK))
+
+	// Allow window to be transparent
+	visual, err := window.GetScreen().GetRGBAVisual()
+	if err != nil || visual == nil {
+		log.Fatal("Alpha not supported")
+	}
+	window.SetVisual(visual)
+
+	window.Show()
+	window.Present()
+
+	windows = append(windows, window)
 }
 
 func main() {
@@ -365,73 +476,17 @@ func main() {
 
 	if len(os.Args) >= 2 && os.Args[1] == "--freeze" {
 		frozenScreen, err = captureScreenshot(desktopRect)
+		_ = err
 	}
 
-	mainWindow, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	if err != nil {
-		log.Fatal("Unable to create window:", err)
+	for _, monitor := range getMonitors() {
+		createWindow(monitor)
 	}
-
-	mainWindow.Fullscreen()
-	mainWindow.SetKeepAbove(true)
-	mainWindow.SetAppPaintable(true)
-	mainWindow.SetDecorated(false)
-	mainWindow.SetSkipTaskbarHint(true)
-
-	_ = mainWindow.Connect("destroy", func() {
-		gtk.MainQuit()
-	})
-
-	_ = mainWindow.Connect("draw", func(window *gtk.Window, context *cairo.Context) {
-		onDraw(context)
-	})
-
-	_ = mainWindow.Connect("button-press-event", func(window *gtk.Window, event *gdk.Event) bool {
-		mouseEvent := gdk.EventButtonNewFromEvent(event)
-		if mouseEvent.Button() == gdk.BUTTON_PRIMARY {
-			onMousePrimaryPressed(mouseEvent)
-		}
-		return true
-	})
-
-	_ = mainWindow.Connect("motion-notify-event", func(window *gtk.Window, event *gdk.Event) bool {
-		onMouseMove(gdk.EventMotionNewFromEvent(event))
-		return true
-	})
-
-	_ = mainWindow.Connect("button-release-event", func(window *gtk.Window, event *gdk.Event) bool {
-		mouseEvent := gdk.EventButtonNewFromEvent(event)
-		if mouseEvent.Button() == gdk.BUTTON_PRIMARY {
-			onMousePrimaryReleased(mouseEvent)
-		}
-		if mouseEvent.Button() == gdk.BUTTON_SECONDARY {
-			onMouseSecondaryReleased()
-		}
-		return true
-	})
-
-	_ = mainWindow.Connect("key-release-event", func(window *gtk.Window, event *gdk.Event) bool {
-		onKeyReleased(gdk.EventKeyNewFromEvent(event))
-		return true
-	})
-
-	mainWindow.SetEvents(int(gdk.POINTER_MOTION_MASK | gdk.KEY_RELEASE_MASK | gdk.BUTTON_PRESS_MASK))
-
-	// Allow main window to be transparent
-	visual, err := mainWindow.GetScreen().GetRGBAVisual()
-	if err != nil || visual == nil {
-		log.Fatal("Alpha not supported")
-	}
-	mainWindow.SetVisual(visual)
-
-	// Show and focus main window
-	mainWindow.Show()
-	mainWindow.Present()
 
 	mousePos = getMousePosition()
 	updateWindowUnderCursor()
 	updateCursor()
-	mainWindow.QueueDraw()
+	redrawAllWindows()
 
 	gtk.Main()
 }

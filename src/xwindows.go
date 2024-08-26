@@ -40,6 +40,10 @@ func NewRectangleFromXRect(rect xrect.Rect) Rectangle {
 	return NewRectangleFromXYWH(rect.X(), rect.Y(), rect.Width(), rect.Height())
 }
 
+func NewRectangleFromGdkRectangle(geometry *gdk.Rectangle) Rectangle {
+	return NewRectangleFromXYWH(geometry.GetX(), geometry.GetY(), geometry.GetWidth(), geometry.GetHeight())
+}
+
 func XPropGetPropertyLRTB(xu *xgbutil.XUtil, win xproto.Window, atomName string) (bool, int, int, int, int) {
 	prop, err := xprop.GetProperty(xu, win, atomName)
 	if err != nil || prop == nil {
@@ -70,6 +74,27 @@ func getScaleFactor() int {
 	}
 
 	return m.GetScaleFactor()
+}
+
+func getMonitors() []*gdk.Monitor {
+	device, err := gdk.DisplayGetDefault()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	monitorsCount := device.GetNMonitors()
+
+	monitors := make([]*gdk.Monitor, 0)
+
+	for i := 0; i < monitorsCount; i++ {
+		monitor, err := device.GetMonitor(i)
+		if err != nil {
+			log.Fatal(err)
+		}
+		monitors = append(monitors, monitor)
+	}
+
+	return monitors
 }
 
 func getCurrentToplevelWindows() []DesktopWindow {

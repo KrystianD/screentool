@@ -1,18 +1,37 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/gtk"
 )
 
 var currentCursor = ""
 
-func setWindowCursor(win *gtk.Window, name string) {
+func setWindowCursor(name string) {
 	if name != currentCursor {
 		currentCursor = name
-		display, _ := win.GetDisplay()
-		cursor, _ := gdk.CursorNewFromName(display, name)
-		window, _ := win.GetWindow()
-		window.SetCursor(cursor)
+
+		display, err := gdk.DisplayGetDefault()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		cursor, err := gdk.CursorNewFromName(display, name)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		screen, err := gdk.ScreenGetDefault()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rootWindow, err := screen.GetRootWindow()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rootWindow.SetCursor(cursor)
 	}
 }
