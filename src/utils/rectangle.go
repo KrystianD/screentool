@@ -71,6 +71,15 @@ func (rect Rectangle) Contains(point Point) bool {
 	return l <= point.X && point.X <= r && t <= point.Y && point.Y <= b
 }
 
+func (rect Rectangle) TranslatedByXY(x, y int) Rectangle {
+	return Rectangle{
+		r: int(float32(rect.r)) + x,
+		t: int(float32(rect.t)) + y,
+		l: int(float32(rect.l)) + x,
+		b: int(float32(rect.b)) + y,
+	}
+}
+
 func (rect Rectangle) Scaled(scale float32) Rectangle {
 	return Rectangle{
 		r: int(float32(rect.r) * scale),
@@ -78,6 +87,25 @@ func (rect Rectangle) Scaled(scale float32) Rectangle {
 		l: int(float32(rect.l) * scale),
 		b: int(float32(rect.b) * scale),
 	}
+}
+
+func (rect Rectangle) Shrinked(value int) Rectangle {
+	return Rectangle{
+		r: rect.r - value,
+		t: rect.t + value,
+		l: rect.l + value,
+		b: rect.b - value,
+	}
+}
+
+func (rect Rectangle) IntersectionWith(otherRect Rectangle) (bool, Rectangle) {
+	newRect := Rectangle{
+		r: Min(rect.r, otherRect.r),
+		t: Max(rect.t, otherRect.t),
+		l: Max(rect.l, otherRect.l),
+		b: Min(rect.b, otherRect.b),
+	}
+	return newRect.l <= newRect.r && newRect.t <= newRect.b, newRect
 }
 
 func (rect Rectangle) SetToCairo(ctx *cairo.Context) {
