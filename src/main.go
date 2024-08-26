@@ -60,9 +60,9 @@ func saveScreenshot(pixbuf *gdk.Pixbuf) {
 	name, _ := strftime.Format("%Y-%m-%d_%H%M%S", time.Now())
 	screenshotsDir := os.ExpandEnv("$HOME/screenshots")
 	if FileExists(screenshotsDir) {
-		filePath := fmt.Sprintf("%s/%s.png", screenshotsDir, name)
+		filePath := fmt.Sprintf("%s/%s.jpg", screenshotsDir, name)
 
-		_ = pixbuf.SavePNG(filePath, 9)
+		_ = pixbuf.SaveJPEG(filePath, 90)
 
 		recentManager, err := gtk.RecentManagerGetDefault()
 		if err == nil {
