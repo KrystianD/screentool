@@ -23,7 +23,7 @@ func (window *DesktopWindow) RaiseToFront() {
 	X, err := xgbutil.NewConn()
 	if err == nil {
 		win := xwindow.New(X, window.window.Id)
-		ewmh.RestackWindow(X, win.Id)
+		_ = ewmh.RestackWindow(X, win.Id)
 	}
 }
 
